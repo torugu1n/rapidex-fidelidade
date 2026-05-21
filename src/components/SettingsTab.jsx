@@ -4,6 +4,7 @@ import {
   DollarSign, 
   Plus, 
   Trash2, 
+  Edit,
   FolderPlus, 
   User, 
   Shield, 
@@ -36,6 +37,14 @@ export default function SettingsTab({ showToast, showConfirm, onSettingsUpdate, 
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserRole, setNewUserRole] = useState('ATENDENTE');
+
+  // Edit Operator states
+  const [editingUser, setEditingUser] = useState(null);
+  const [editUserName, setEditUserName] = useState('');
+  const [editUserEmail, setEditUserEmail] = useState('');
+  const [editUserPassword, setEditUserPassword] = useState('');
+  const [editUserRole, setEditUserRole] = useState('ATENDENTE');
+
 
   const loadAll = async () => {
     try {
@@ -241,6 +250,67 @@ export default function SettingsTab({ showToast, showConfirm, onSettingsUpdate, 
       }
     });
   };
+
+  const handleStartEditUser = (user) => {
+    setEditingUser(user);
+    setEditUserName(user.name);
+    setEditUserEmail(user.email);
+    setEditUserPassword('');
+    setEditUserRole(user.role);
+  };
+
+  const handleSaveEditUser = (e) => {
+    e.preventDefault();
+    if (!editUserName || !editUserEmail) {
+      showToast('Nome e login/e-mail são obrigatórios.', 'warning');
+      return;
+    }
+    const doUpdate = async () => {
+      try {
+        const payload = {
+          name: editUserName,
+          email: editUserEmail,
+          role: editUserRole
+        };
+        if (editUserPassword.trim() !== '') {
+          payload.password = editUserPassword;
+        }
+
+        await api.updateUser(editingUser.id, payload);
+        showToast('Operador atualizado com sucesso!', 'success');
+        setEditingUser(null);
+
+        const dataUsers = await api.getUsers();
+        setUsers(dataUsers);
+
+        if (currentUser && currentUser.id === editingUser.id) {
+          const updatedUser = {
+            ...currentUser,
+            name: editUserName,
+            email: editUserEmail,
+            role: editUserRole
+          };
+          localStorage.setItem('isp_auth_user', JSON.stringify(updatedUser));
+          showToast('Alterações salvas! Atualizando painel...', 'success');
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        }
+      } catch (err) {
+        showToast(err.message || 'Erro ao atualizar operador.', 'error');
+      }
+    };
+
+    showConfirm({
+      title: 'Atualizar Operador',
+      description: `Deseja salvar as alterações para o operador "${editingUser.name}"?`,
+      confirmLabel: 'Salvar',
+      cancelLabel: 'Cancelar',
+      type: 'success',
+      onConfirm: doUpdate
+    });
+  };
+
 
 
 
@@ -500,7 +570,7 @@ export default function SettingsTab({ showToast, showConfirm, onSettingsUpdate, 
                       <th className="py-2.5 px-3 font-semibold">Nome</th>
                       <th className="py-2.5 px-3 font-semibold">Login / E-mail</th>
                       <th className="py-2.5 px-3 font-semibold">Nível</th>
-                      <th className="py-2.5 px-3 font-semibold text-right">Remover</th>
+                      <th className="py-2.5 px-3 font-semibold text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-isp-border/10 text-slate-700 dark:text-slate-200">
@@ -518,18 +588,27 @@ export default function SettingsTab({ showToast, showConfirm, onSettingsUpdate, 
                           </span>
                         </td>
                         <td className="py-2.5 px-3 text-right">
-                          <button
-                            onClick={() => handleDeleteUser(u.id)}
-                            disabled={currentUser?.id === u.id}
-                            className={`p-1.5 rounded-lg border transition-all ${
-                              currentUser?.id === u.id
-                                ? 'text-slate-400 dark:text-slate-600 border-slate-200 dark:border-isp-border/20 cursor-not-allowed bg-slate-100 dark:bg-transparent'
-                                : 'text-rose-500 hover:text-white hover:bg-rose-500 hover:border-rose-500 border-slate-200 dark:border-isp-border/30 bg-white dark:bg-transparent'
-                            }`}
-                            title={currentUser?.id === u.id ? "Sua conta atual logada" : "Remover Operador"}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex justify-end gap-1.5">
+                            <button
+                              onClick={() => handleStartEditUser(u)}
+                              className="p-1.5 rounded-lg border text-isp-cyan hover:text-white hover:bg-isp-accent hover:border-isp-accent border-slate-200 dark:border-isp-border/30 bg-white dark:bg-transparent transition-all"
+                              title="Editar Operador"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(u.id)}
+                              disabled={currentUser?.id === u.id}
+                              className={`p-1.5 rounded-lg border transition-all ${
+                                currentUser?.id === u.id
+                                  ? 'text-slate-400 dark:text-slate-600 border-slate-200 dark:border-isp-border/20 cursor-not-allowed bg-slate-100 dark:bg-transparent'
+                                  : 'text-rose-500 hover:text-white hover:bg-rose-500 hover:border-rose-500 border-slate-200 dark:border-isp-border/30 bg-white dark:bg-transparent'
+                              }`}
+                              title={currentUser?.id === u.id ? "Sua conta atual logada" : "Remover Operador"}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -537,6 +616,100 @@ export default function SettingsTab({ showToast, showConfirm, onSettingsUpdate, 
                 </table>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição de Operador */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div 
+            className="absolute inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm" 
+            onClick={() => setEditingUser(null)} 
+          />
+
+          <div className="bg-white dark:bg-isp-navy w-full max-w-md rounded-2xl border border-slate-200 dark:border-isp-border shadow-2xl z-10 overflow-hidden animate-slideUp">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-isp-border/30">
+              <h3 className="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <User className="w-4 h-4 text-isp-accent" />
+                <span>Editar Operador</span>
+              </h3>
+              <button 
+                onClick={() => setEditingUser(null)} 
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-isp-border/30 transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditUser} className="p-5 space-y-4">
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-isp-muted">Nome Completo</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Nome do Operador"
+                  value={editUserName}
+                  onChange={(e) => setEditUserName(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-isp-border/20 border border-slate-200 dark:border-isp-border/30 rounded-xl text-xs text-slate-800 dark:text-white focus:outline-none focus:border-isp-accent"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-isp-muted">Login / E-mail</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: lucas.rapidex"
+                  value={editUserEmail}
+                  onChange={(e) => setEditUserEmail(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-isp-border/20 border border-slate-200 dark:border-isp-border/30 rounded-xl text-xs text-slate-800 dark:text-white focus:outline-none focus:border-isp-accent"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-isp-muted flex justify-between">
+                  <span>Nova Senha</span>
+                  <span className="text-[10px] text-slate-400 dark:text-isp-muted font-normal">(Opcional)</span>
+                </label>
+                <input
+                  type="password"
+                  placeholder="Digite para alterar ou deixe em branco"
+                  value={editUserPassword}
+                  onChange={(e) => setEditUserPassword(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-isp-border/20 border border-slate-200 dark:border-isp-border/30 rounded-xl text-xs text-slate-800 dark:text-white focus:outline-none focus:border-isp-accent"
+                />
+                <p className="text-[10px] text-slate-400 dark:text-isp-muted">Deixe este campo vazio caso não queira alterar a senha atual deste operador.</p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-isp-muted">Nível de Acesso</label>
+                <select
+                  value={editUserRole}
+                  onChange={(e) => setEditUserRole(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-isp-border/20 border border-slate-200 dark:border-isp-border/30 rounded-xl text-xs text-slate-800 dark:text-white focus:outline-none focus:border-isp-accent select-none"
+                >
+                  <option value="ATENDENTE">Atendente (Sem Configurações)</option>
+                  <option value="ADMIN">Administrador (Acesso Total)</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-slate-100 dark:border-isp-border/20">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="w-1/2 py-2 rounded-xl border border-slate-200 dark:border-isp-border/40 hover:bg-slate-50 dark:hover:bg-isp-border/20 text-slate-600 dark:text-slate-300 text-xs font-semibold transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="w-1/2 py-2 rounded-xl bg-isp-accent hover:bg-isp-accent/90 text-white text-xs font-semibold transition-all shadow-md shadow-isp-accent/15"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

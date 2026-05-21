@@ -681,6 +681,56 @@ app.delete('/api/users/:id', async (req, res) => {
   }
 });
 
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, password, role } = req.body;
+
+    const exists = await prisma.user.findUnique({
+      where: { id }
+    });
+    if (!exists) {
+      return res.status(404).json({ message: 'Operador não encontrado.' });
+    }
+
+    if (email) {
+      const emailConflict = await prisma.user.findFirst({
+        where: {
+          email: { equals: email, mode: 'insensitive' },
+          NOT: { id }
+        }
+      });
+      if (emailConflict) {
+        return res.status(400).json({ message: 'Já existe um operador cadastrado com este e-mail/login.' });
+      }
+    }
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (role) updateData.role = role;
+    if (password && password.trim() !== '') {
+      updateData.passwordHash = password;
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: updateData
+    });
+
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao atualizar operador no backend.' });
+  }
+});
+
+
 // Servir arquivos estáticos do frontend em produção
 const path = require('path');
 app.use(express.static(path.join(__dirname, 'dist')));

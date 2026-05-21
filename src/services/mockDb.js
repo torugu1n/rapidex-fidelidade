@@ -720,6 +720,42 @@ export const mockDb = {
     return true;
   },
 
+  async updateUser(id, userData) {
+    await delay();
+    const users = readFromStorage(STORAGE_KEYS.USERS, INITIAL_USERS);
+    const userIndex = users.findIndex(u => u.id === id);
+    if (userIndex === -1) {
+      throw new Error('Operador não encontrado.');
+    }
+    
+    if (userData.email) {
+      const emailExists = users.some(u => u.id !== id && u.email.toLowerCase() === userData.email.toLowerCase());
+      if (emailExists) {
+        throw new Error('Já existe um operador cadastrado com este e-mail/login.');
+      }
+    }
+    
+    const updatedUser = { ...users[userIndex] };
+    if (userData.name) updatedUser.name = userData.name;
+    if (userData.email) updatedUser.email = userData.email;
+    if (userData.role) updatedUser.role = userData.role;
+    if (userData.password && userData.password.trim() !== '') {
+      updatedUser.password = userData.password;
+    }
+    
+    users[userIndex] = updatedUser;
+    writeToStorage(STORAGE_KEYS.USERS, users);
+    addAuditLog('USER_UPDATED', `Operador "${updatedUser.name}" (${updatedUser.email}) atualizado. Cargo: ${updatedUser.role}`);
+    
+    return {
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role
+    };
+  },
+
+
   async authenticateUser(email, password) {
     await delay();
     const users = readFromStorage(STORAGE_KEYS.USERS, INITIAL_USERS);

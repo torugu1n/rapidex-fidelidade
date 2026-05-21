@@ -217,6 +217,23 @@ export const api = {
     return mockDb.deleteUser(id);
   },
 
+  async updateUser(id, data) {
+    if (USE_REAL_BACKEND) {
+      const response = await fetch(`${BACKEND_URL}/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || 'Erro ao atualizar operador');
+      }
+      return response.json();
+    }
+    return mockDb.updateUser(id, data);
+  },
+
+
   async login(email, password) {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/auth/login`, {
