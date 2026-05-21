@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Share2, 
-  Percent, 
-  Gift, 
-  ArrowUpRight, 
-  CheckCircle2, 
-  Clock, 
+import {
+  Users,
+  Share2,
+  Percent,
+  Gift,
+  ArrowUpRight,
+  CheckCircle2,
+  Clock,
   XCircle,
   Plus,
   Trophy,
@@ -14,12 +14,12 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 
-export default function DashboardTab({ 
-  setActiveTab, 
+export default function DashboardTab({
+  setActiveTab,
   currentUser,
-  openNewCustomerModal, 
-  openNewReferralModal, 
-  openCustomerDetails, 
+  openNewCustomerModal,
+  openNewReferralModal,
+  openCustomerDetails,
   showToast,
   showConfirm
 }) {
@@ -120,6 +120,9 @@ export default function DashboardTab({
     return `${x},${y}`;
   }).join(' ');
 
+  const midVal = Math.round(maxVal / 2);
+  const midY = height - padding - (midVal * chartHeight) / maxVal;
+
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Welcome Header */}
@@ -132,7 +135,7 @@ export default function DashboardTab({
             Aqui está o resumo das indicações e recompensas da rede.
           </p>
         </div>
-        
+
         {/* Quick Actions */}
         <div className="flex gap-3">
           <button
@@ -252,7 +255,7 @@ export default function DashboardTab({
             <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
               {/* Grid Lines */}
               <line x1={padding} y1={padding} x2={width - padding} y2={padding} stroke="currentColor" className="text-slate-200 dark:text-isp-border/30" strokeDasharray="3,3" />
-              <line x1={padding} y1={padding + chartHeight / 2} x2={width - padding} y2={padding + chartHeight / 2} stroke="currentColor" className="text-slate-200 dark:text-isp-border/30" strokeDasharray="3,3" />
+              <line x1={padding} y1={midY} x2={width - padding} y2={midY} stroke="currentColor" className="text-slate-200 dark:text-isp-border/30" strokeDasharray="3,3" />
               <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="currentColor" className="text-slate-300 dark:text-isp-border/60" />
 
               {/* X Axis Labels */}
@@ -273,7 +276,7 @@ export default function DashboardTab({
 
               {/* Y Axis Labels */}
               <text x={padding - 10} y={padding + 4} className="text-[10px] fill-slate-400 dark:fill-isp-muted font-semibold" textAnchor="end">{maxVal}</text>
-              <text x={padding - 10} y={padding + chartHeight / 2 + 4} className="text-[10px] fill-slate-400 dark:fill-isp-muted font-semibold" textAnchor="end">{Math.round(maxVal / 2)}</text>
+              <text x={padding - 10} y={midY + 4} className="text-[10px] fill-slate-400 dark:fill-isp-muted font-semibold" textAnchor="end">{midVal}</text>
               <text x={padding - 10} y={height - padding + 4} className="text-[10px] fill-slate-400 dark:fill-isp-muted font-semibold" textAnchor="end">0</text>
 
               {/* Line 1: Indicações */}
@@ -305,15 +308,15 @@ export default function DashboardTab({
                 const y = height - padding - (d.indicações * chartHeight) / maxVal;
                 return (
                   <g key={`p1-${i}`} className="group/dot cursor-pointer">
-                    <circle 
-                      cx={x} 
-                      cy={y} 
-                      r="5" 
-                      fill="#3b81cd" 
-                      stroke="#fff" 
-                      strokeWidth="1.5" 
-                      className="hover:scale-150 transition-transform duration-200" 
-                      style={{ transformOrigin: 'center', transformBox: 'fill-box' }} 
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="5"
+                      fill="#3b81cd"
+                      stroke="#fff"
+                      strokeWidth="1.5"
+                      className="hover:scale-150 transition-transform duration-200"
+                      style={{ transformOrigin: 'center', transformBox: 'fill-box' }}
                       onMouseEnter={() => setHoveredPoint({ x, y, month: d.month, label: 'Indicações', value: d.indicações, color: '#3b81cd' })}
                       onMouseLeave={() => setHoveredPoint(null)}
                     />
@@ -327,15 +330,15 @@ export default function DashboardTab({
                 const y = height - padding - (d.conversões * chartHeight) / maxVal;
                 return (
                   <g key={`p2-${i}`} className="group/dot cursor-pointer">
-                    <circle 
-                      cx={x} 
-                      cy={y} 
-                      r="4" 
-                      fill="#3cb0e6" 
-                      stroke="#fff" 
-                      strokeWidth="1.5" 
-                      className="hover:scale-150 transition-transform duration-200" 
-                      style={{ transformOrigin: 'center', transformBox: 'fill-box' }} 
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="4"
+                      fill="#3cb0e6"
+                      stroke="#fff"
+                      strokeWidth="1.5"
+                      className="hover:scale-150 transition-transform duration-200"
+                      style={{ transformOrigin: 'center', transformBox: 'fill-box' }}
                       onMouseEnter={() => setHoveredPoint({ x, y, month: d.month, label: 'Instalados', value: d.conversões, color: '#3cb0e6' })}
                       onMouseLeave={() => setHoveredPoint(null)}
                     />
@@ -346,11 +349,11 @@ export default function DashboardTab({
 
             {/* Custom Tooltip */}
             {hoveredPoint && (
-              <div 
+              <div
                 className="absolute bg-slate-900/90 dark:bg-slate-950/95 text-white py-1.5 px-2.5 rounded-xl border border-slate-700/50 shadow-2xl backdrop-blur-sm pointer-events-none transform -translate-x-1/2 -translate-y-full -mt-2 transition-all duration-150 z-20 flex flex-col gap-0.5 text-center font-sans animate-fadeIn"
-                style={{ 
-                  left: `${(hoveredPoint.x / width) * 100}%`, 
-                  top: `${(hoveredPoint.y / height) * 100}%` 
+                style={{
+                  left: `${(hoveredPoint.x / width) * 100}%`,
+                  top: `${(hoveredPoint.y / height) * 100}%`
                 }}
               >
                 <span className="text-[9px] text-slate-300 dark:text-slate-400 font-bold uppercase tracking-wider">{hoveredPoint.month}</span>
@@ -372,19 +375,18 @@ export default function DashboardTab({
               <Trophy className="w-4 h-4 text-amber-500" />
               <h4 className="text-sm font-semibold text-slate-800 dark:text-white uppercase tracking-wider">Top Indicadores</h4>
             </div>
-            
+
             <div className="space-y-4">
               {stats.ranking.slice(0, 3).map((item, idx) => (
                 <div key={item.customerId} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-isp-border/20 transition-all duration-200">
                   <div className="flex items-center gap-3">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                      idx === 0 ? 'bg-amber-500/20 text-amber-500' :
-                      idx === 1 ? 'bg-slate-400/20 text-slate-400' :
-                      'bg-amber-700/20 text-amber-700'
-                    }`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${idx === 0 ? 'bg-amber-500/20 text-amber-500' :
+                        idx === 1 ? 'bg-slate-400/20 text-slate-400' :
+                          'bg-amber-700/20 text-amber-700'
+                      }`}>
                       {idx + 1}
                     </div>
-                    <button 
+                    <button
                       onClick={() => openCustomerDetails(item.customerId)}
                       className="text-left font-medium text-sm text-slate-700 dark:text-white hover:text-isp-accent hover:underline truncate max-w-[120px]"
                     >
@@ -447,11 +449,10 @@ export default function DashboardTab({
                     {new Date(ref.createdAt).toLocaleDateString('pt-BR')}
                   </td>
                   <td className="py-3.5">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      ref.status === 'INSTALADO' ? 'bg-emerald-500/10 text-emerald-500' :
-                      ref.status === 'PENDENTE' ? 'bg-amber-500/10 text-amber-500 animate-pulse' :
-                      'bg-rose-500/10 text-rose-500'
-                    }`}>
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${ref.status === 'INSTALADO' ? 'bg-emerald-500/10 text-emerald-500' :
+                        ref.status === 'PENDENTE' ? 'bg-amber-500/10 text-amber-500 animate-pulse' :
+                          'bg-rose-500/10 text-rose-500'
+                      }`}>
                       {ref.status === 'INSTALADO' && <CheckCircle2 className="w-3 h-3" />}
                       {ref.status === 'PENDENTE' && <Clock className="w-3 h-3" />}
                       {ref.status === 'CANCELADO' && <XCircle className="w-3 h-3" />}
