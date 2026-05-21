@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Build and Push Docker Image
 
 on:
   push:
@@ -7,8 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # Transforma o nome do repositório em minúsculo para evitar problemas com o docker
-  IMAGE_NAME_PREFIX: ghcr.io/${{ github.repository_owner }}/fidelidade
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/fidelidade-app
 
 jobs:
   build-and-push:
@@ -28,24 +27,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build e Push do Backend
-      - name: Build and push Backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          file: ./backend/Dockerfile
-          push: true
-          tags: |
-            ${{ env.IMAGE_NAME_PREFIX }}-backend:latest
-            ${{ env.IMAGE_NAME_PREFIX }}-backend:${{ github.sha }}
-
-      # Build e Push do Frontend
-      - name: Build and push Frontend image
+      - name: Build and push unified app image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ env.IMAGE_NAME_PREFIX }}-frontend:latest
-            ${{ env.IMAGE_NAME_PREFIX }}-frontend:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}

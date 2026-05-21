@@ -2,18 +2,13 @@
 
 Este projeto é um sistema web para gerenciamento e controle de indicações de clientes e distribuição de recompensas para um Provedor de Internet (ISP).
 
-A aplicação é dividida em:
-*   **Frontend**: Desenvolvido em React + Vite + TailwindCSS.
-*   **Backend**: API REST desenvolvida em Node.js + Express + Prisma ORM.
-*   **Banco de Dados**: PostgreSQL.
+A aplicação é unificada: o servidor backend (Node + Express) serve tanto as APIs quanto os arquivos estáticos compilados do frontend (React).
 
 ---
 
-## 🐳 Executando em Produção (Docker Compose + Watchtower)
+## 🐳 Executando em Produção (Docker Compose)
 
-A aplicação está configurada para deploy simplificado. As imagens do frontend e do backend são construídas automaticamente pelo GitHub Actions e enviadas para o **GitHub Container Registry (GHCR)**.
-
-Na sua VPS, você só precisa do arquivo `docker-compose.yml`. O **Watchtower** monitorará o registro de imagens e atualizará a aplicação automaticamente a cada 5 minutos sempre que um novo `push` for feito na branch `main`.
+A aplicação está configurada para deploy simplificado com um único container de aplicação (`fidelidade_app`) e um container de banco de dados (`fidelidade_db`). A imagem unificada do aplicativo é construída automaticamente pelo GitHub Actions e enviada para o **GitHub Container Registry (GHCR)**.
 
 ### Passo a Passo
 
@@ -22,7 +17,7 @@ Na sua VPS, você só precisa do arquivo `docker-compose.yml`. O **Watchtower** 
     ```bash
     docker compose up -d
     ```
-    A aplicação estará disponível em [http://localhost:8080](http://localhost:8080).
+    A aplicação estará disponível na porta 8080 em [http://localhost:8080](http://localhost:8080).
 
 2.  **Popular o Banco de Dados (Seed Inicial)**:
     ```bash
@@ -33,10 +28,6 @@ Na sua VPS, você só precisa do arquivo `docker-compose.yml`. O **Watchtower** 
     Se o seu repositório de imagens no GHCR for privado, autentique o Docker da VPS uma única vez usando seu Personal Access Token (PAT) do GitHub:
     ```bash
     docker login ghcr.io -u SEU_USUARIO_GITHUB
-    ```
-    E certifique-se de expor as credenciais para o Watchtower no `docker-compose.yml` descomentando a linha:
-    ```yaml
-    - ~/.docker/config.json:/config.json:ro
     ```
 
 ---
@@ -54,7 +45,6 @@ Para rodar localmente e realizar alterações no código em tempo real:
     No diretório `./backend`:
     ```bash
     npm install
-    # Configure o arquivo .env se necessário (padrão já configurado no código)
     npx prisma db push
     npm run dev
     ```

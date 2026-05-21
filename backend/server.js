@@ -677,6 +677,15 @@ app.delete('/api/users/:id', async (req, res) => {
   }
 });
 
+// Servir arquivos estáticos do frontend em produção
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// Fallback para React Router (Single Page Application)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
 // Inicialização do servidor
 app.listen(PORT, () => {
   console.log(`Servidor rodando com sucesso na porta ${PORT}`);

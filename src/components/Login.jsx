@@ -42,7 +42,7 @@ export default function Login({ onLogin, showToast }) {
           </div>
           <div>
             <h2 className="text-xl font-extrabold text-slate-800 dark:text-white leading-tight">
-              Fidelidade ISP
+              Rapidex Fidelidade
             </h2>
             <p className="text-xs text-slate-500 dark:text-isp-muted mt-1 font-medium">
               Controle de indicações e recompensas da rede
@@ -64,7 +64,7 @@ export default function Login({ onLogin, showToast }) {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Ex: admin.rapidex"
+                placeholder="Digite seu login ou e-mail"
                 className="w-full px-4 py-3 pl-11 bg-slate-50 dark:bg-[#030722]/50 border border-slate-200 dark:border-isp-border/50 rounded-2xl text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:border-isp-accent focus:ring-1 focus:ring-isp-accent transition-all"
               />
               <Mail className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -87,16 +87,11 @@ export default function Login({ onLogin, showToast }) {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Digite sua senha"
                 className="w-full px-4 py-3 pl-11 bg-slate-50 dark:bg-[#030722]/50 border border-slate-200 dark:border-isp-border/50 rounded-2xl text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:border-isp-accent focus:ring-1 focus:ring-isp-accent transition-all"
               />
               <Lock className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             </div>
-          </div>
-
-          {/* Alert explaining prefill */}
-          <div className="bg-isp-accent/5 dark:bg-isp-accent/10 border border-isp-accent/20 p-3 rounded-2xl text-[10px] text-slate-500 dark:text-isp-muted leading-relaxed">
-            💡 <strong>Modo Demo Ativo:</strong> As credenciais estão pré-preenchidas para facilitar o acesso. Clique no botão abaixo para entrar.
           </div>
 
           {/* Submit */}

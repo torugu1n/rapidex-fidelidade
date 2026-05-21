@@ -1,25 +1,32 @@
 # Stage 1: Build the React application
-FROM node:20-alpine AS build
-
+FROM node:20-alpine AS frontend-builder
 WORKDIR /app
-
-# Copy dependency configs and install packages
 COPY package*.json ./
-RUN npm ci
-
-# Copy the rest of the codebase and build production bundle
+RUN npm install
 COPY . .
 RUN npm run build
 
-# Stage 2: Serve using Nginx
-FROM nginx:alpine
+# Stage 2: Run the Express application (Backend + Frontend)
+FROM node:20-alpine
+WORKDIR /usr/src/app
 
-# Copy custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Instalar dependências de sistema necessárias para o Prisma no Alpine
+RUN apk add --no-cache openssl libc6-compat
 
-# Copy build artifacts to Nginx html directory
-COPY --from=build /app/dist /usr/share/nginx/html
+# Copiar arquivos de dependências do backend
+COPY backend/package*.json ./
+COPY backend/prisma ./prisma/
+RUN npm install
 
-EXPOSE 80
+# Copiar código do backend
+COPY backend/ .
 
-CMD ["nginx", "-g", "daemon off;"]
+# Copiar arquivos estáticos compilados do frontend para dentro da pasta do backend
+COPY --from=frontend-builder /app/dist ./dist
+
+# Gerar o Prisma Client
+RUN npx prisma generate
+
+EXPOSE 3001
+
+CMD ["sh", "-c", "npx prisma db push && npm start"]
