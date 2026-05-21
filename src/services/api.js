@@ -6,10 +6,29 @@ import { mockDb } from './mockDb';
 const USE_REAL_BACKEND = true; // Habilitado para o deploy com backend real
 const BACKEND_URL = window.location.origin.includes('localhost:5173') ? 'http://localhost:3001/api' : '/api';
 
+// Helper para construir os cabeçalhos com o operador autenticado
+function getHeaders(extraHeaders = {}) {
+  const headers = { ...extraHeaders };
+  try {
+    const saved = localStorage.getItem('isp_auth_user');
+    if (saved) {
+      const user = JSON.parse(saved);
+      if (user && user.name) {
+        headers['x-operator-name'] = user.name;
+      }
+    }
+  } catch (e) {
+    console.error('Erro ao ler usuário para cabeçalhos:', e);
+  }
+  return headers;
+}
+
 export const api = {
   async getSettings() {
     if (USE_REAL_BACKEND) {
-      const response = await fetch(`${BACKEND_URL}/settings`);
+      const response = await fetch(`${BACKEND_URL}/settings`, {
+        headers: getHeaders()
+      });
       return response.json();
     }
     return mockDb.getSettings();
@@ -19,7 +38,7 @@ export const api = {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/settings`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(data),
       });
       return response.json();
@@ -29,7 +48,10 @@ export const api = {
 
   async resetDatabase() {
     if (USE_REAL_BACKEND) {
-      const response = await fetch(`${BACKEND_URL}/reset`, { method: 'POST' });
+      const response = await fetch(`${BACKEND_URL}/reset`, {
+        method: 'POST',
+        headers: getHeaders()
+      });
       return response.json();
     }
     return mockDb.reset();
@@ -37,7 +59,9 @@ export const api = {
 
   async getPlans() {
     if (USE_REAL_BACKEND) {
-      const response = await fetch(`${BACKEND_URL}/plans`);
+      const response = await fetch(`${BACKEND_URL}/plans`, {
+        headers: getHeaders()
+      });
       return response.json();
     }
     return mockDb.getPlans();
@@ -47,7 +71,7 @@ export const api = {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/plans`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(plan),
       });
       return response.json();
@@ -57,7 +81,9 @@ export const api = {
 
   async getCustomers() {
     if (USE_REAL_BACKEND) {
-      const response = await fetch(`${BACKEND_URL}/customers`);
+      const response = await fetch(`${BACKEND_URL}/customers`, {
+        headers: getHeaders()
+      });
       return response.json();
     }
     return mockDb.getCustomers();
@@ -65,7 +91,9 @@ export const api = {
 
   async getCustomerById(id) {
     if (USE_REAL_BACKEND) {
-      const response = await fetch(`${BACKEND_URL}/customers/${id}`);
+      const response = await fetch(`${BACKEND_URL}/customers/${id}`, {
+        headers: getHeaders()
+      });
       return response.json();
     }
     return mockDb.getCustomerById(id);
@@ -75,7 +103,7 @@ export const api = {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/customers`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(customer),
       });
       return response.json();
@@ -87,7 +115,7 @@ export const api = {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/customers/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(data),
       });
       return response.json();
@@ -99,6 +127,7 @@ export const api = {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/customers/${id}`, {
         method: 'DELETE',
+        headers: getHeaders()
       });
       if (!response.ok) {
         const err = await response.json();
@@ -111,7 +140,9 @@ export const api = {
 
   async getReferrals() {
     if (USE_REAL_BACKEND) {
-      const response = await fetch(`${BACKEND_URL}/referrals`);
+      const response = await fetch(`${BACKEND_URL}/referrals`, {
+        headers: getHeaders()
+      });
       return response.json();
     }
     return mockDb.getReferrals();
@@ -121,7 +152,7 @@ export const api = {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/referrals`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(referral),
       });
       if (!response.ok) {
@@ -137,7 +168,7 @@ export const api = {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/referrals/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(data),
       });
       return response.json();
@@ -149,6 +180,7 @@ export const api = {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/referrals/${id}`, {
         method: 'DELETE',
+        headers: getHeaders()
       });
       return response.ok;
     }
@@ -157,7 +189,9 @@ export const api = {
 
   async getRewards() {
     if (USE_REAL_BACKEND) {
-      const response = await fetch(`${BACKEND_URL}/rewards`);
+      const response = await fetch(`${BACKEND_URL}/rewards`, {
+        headers: getHeaders()
+      });
       return response.json();
     }
     return mockDb.getRewards();
@@ -167,7 +201,7 @@ export const api = {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/rewards/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(data),
       });
       return response.json();
@@ -177,7 +211,9 @@ export const api = {
 
   async getDashboardStats() {
     if (USE_REAL_BACKEND) {
-      const response = await fetch(`${BACKEND_URL}/dashboard/stats`);
+      const response = await fetch(`${BACKEND_URL}/dashboard/stats`, {
+        headers: getHeaders()
+      });
       return response.json();
     }
     return mockDb.getDashboardStats();
@@ -185,7 +221,9 @@ export const api = {
 
   async getUsers() {
     if (USE_REAL_BACKEND) {
-      const response = await fetch(`${BACKEND_URL}/users`);
+      const response = await fetch(`${BACKEND_URL}/users`, {
+        headers: getHeaders()
+      });
       return response.json();
     }
     return mockDb.getUsers();
@@ -195,7 +233,7 @@ export const api = {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/users`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(user),
       });
       if (!response.ok) {
@@ -211,6 +249,7 @@ export const api = {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/users/${id}`, {
         method: 'DELETE',
+        headers: getHeaders()
       });
       return response.ok;
     }
@@ -221,7 +260,7 @@ export const api = {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/users/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(data),
       });
       if (!response.ok) {
@@ -233,12 +272,11 @@ export const api = {
     return mockDb.updateUser(id, data);
   },
 
-
   async login(email, password) {
     if (USE_REAL_BACKEND) {
       const response = await fetch(`${BACKEND_URL}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ email, password }),
       });
       if (!response.ok) {
@@ -252,7 +290,9 @@ export const api = {
 
   async getAuditLogs() {
     if (USE_REAL_BACKEND) {
-      const response = await fetch(`${BACKEND_URL}/audit`);
+      const response = await fetch(`${BACKEND_URL}/audit`, {
+        headers: getHeaders()
+      });
       return response.json();
     }
     return mockDb.getAuditLogs();
@@ -260,7 +300,10 @@ export const api = {
 
   async clearAuditLogs() {
     if (USE_REAL_BACKEND) {
-      const response = await fetch(`${BACKEND_URL}/audit`, { method: 'DELETE' });
+      const response = await fetch(`${BACKEND_URL}/audit`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
       return response.ok;
     }
     return mockDb.clearAuditLogs();

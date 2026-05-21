@@ -100,3 +100,14 @@ model Reward {
 
   @@map("rewards")
 }
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  action       String
+  description  String
+  operatorName String
+  createdAt    DateTime @default(now())
+
+  @@map("audit_logs")
+}
+

@@ -15,6 +15,22 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Helper para Registrar Logs de Auditoria
+async function addAuditLog(req, action, description) {
+  try {
+    const operatorName = req ? (req.headers['x-operator-name'] || 'Sistema') : 'Sistema';
+    await prisma.auditLog.create({
+      data: {
+        action,
+        description,
+        operatorName
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao salvar log de auditoria:', error);
+  }
+}
+
 // Configurações Globais Padrão (Simuladas no banco)
 let defaultSettings = {
   defaultRewardType: 'Desconto de R$ 50,00 na Fatura',
@@ -30,7 +46,7 @@ app.get('/api/settings', (req, res) => {
   res.json({ ...defaultSettings, mockDelayEnabled: false, latencyMs: 0 });
 });
 
-app.put('/api/settings', (req, res) => {
+app.put('/api/settings', async (req, res) => {
   defaultSettings = {
     ...defaultSettings,
     adminName: req.body.adminName || defaultSettings.adminName,
@@ -39,6 +55,7 @@ app.put('/api/settings', (req, res) => {
     defaultRewardValue: parseFloat(req.body.defaultRewardValue) || defaultSettings.defaultRewardValue,
     referralsPerReward: parseInt(req.body.referralsPerReward) || defaultSettings.referralsPerReward
   };
+  await addAuditLog(req, 'SETTINGS_UPDATE', 'Configurações gerais atualizadas');
   res.json({ ...defaultSettings, mockDelayEnabled: false, latencyMs: 0 });
 });
 
@@ -109,6 +126,7 @@ async function seedDatabase() {
 app.post('/api/reset', async (req, res) => {
   try {
     await seedDatabase();
+    await addAuditLog(req, 'SYSTEM_RESET', 'Banco de dados redefinido e semeado com dados padrão');
     res.json({ message: 'Banco de dados redefinido e povoado com sucesso.' });
   } catch (error) {
     console.error(error);
@@ -133,6 +151,7 @@ app.post('/api/plans', async (req, res) => {
     const plan = await prisma.plan.create({
       data: { name, price: parseFloat(price) }
     });
+    await addAuditLog(req, 'PLAN_CREATE', `Plano ${name} adicionado com valor R$ ${parseFloat(price).toFixed(2)}`);
     res.json(plan);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao criar plano.' });
@@ -227,6 +246,7 @@ app.post('/api/customers', async (req, res) => {
     const customer = await prisma.customer.create({
       data: { name, phone, cpf, planId, city, neighborhood, status }
     });
+    await addAuditLog(req, 'CUSTOMER_CREATE', `Cliente ${name} cadastrado`);
     res.json(customer);
   } catch (error) {
     console.error(error);
@@ -242,6 +262,7 @@ app.put('/api/customers/:id', async (req, res) => {
       where: { id },
       data: { name, phone, cpf, planId, city, neighborhood, status, notes }
     });
+    await addAuditLog(req, 'CUSTOMER_UPDATE', `Dados do cliente ${name} atualizados`);
     res.json(customer);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar cliente.' });
@@ -251,6 +272,10 @@ app.put('/api/customers/:id', async (req, res) => {
 app.delete('/api/customers/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const customer = await prisma.customer.findUnique({ where: { id } });
+    if (!customer) {
+      return res.status(404).json({ error: 'Cliente não encontrado.' });
+    }
 
     // Verificar se o cliente possui indicações registradas
     const referralsCount = await prisma.referral.count({
@@ -269,6 +294,7 @@ app.delete('/api/customers/:id', async (req, res) => {
     }
 
     await prisma.customer.delete({ where: { id } });
+    await addAuditLog(req, 'CUSTOMER_DELETE', `Cliente ${customer.name} excluído`);
     res.json({ message: 'Cliente excluído com sucesso.' });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao deletar cliente.' });
@@ -381,12 +407,19 @@ app.post('/api/referrals', async (req, res) => {
       return res.status(400).json({ message: 'Este cliente já possui uma indicação registrada.' });
     }
 
+    const referrer = await prisma.customer.findUnique({ where: { id: referrerId } });
+    const referee = await prisma.customer.findUnique({ where: { id: refereeId } });
+
     const referral = await prisma.referral.create({
       data: { referrerId, refereeId, status, notes }
     });
 
     // Recalcular recompensas acumuladas
     await recalculateRealReferrerRewards(referrerId);
+
+    const referrerName = referrer ? referrer.name : 'Desconhecido';
+    const refereeName = referee ? referee.name : 'Desconhecido';
+    await addAuditLog(req, 'REFERRAL_CREATE', `Indicação registrada de ${referrerName} para ${refereeName}`);
 
     res.json(referral);
   } catch (error) {
@@ -401,7 +434,7 @@ app.put('/api/referrals/:id', async (req, res) => {
 
     const previousReferral = await prisma.referral.findUnique({
       where: { id },
-      include: { reward: true }
+      include: { referrer: true, referee: true }
     });
 
     if (!previousReferral) {
@@ -416,6 +449,10 @@ app.put('/api/referrals/:id', async (req, res) => {
     // Recalcular recompensas acumuladas
     await recalculateRealReferrerRewards(referral.referrerId);
 
+    const referrerName = previousReferral.referrer ? previousReferral.referrer.name : 'Desconhecido';
+    const refereeName = previousReferral.referee ? previousReferral.referee.name : 'Desconhecido';
+    await addAuditLog(req, 'REFERRAL_UPDATE', `Indicação de ${referrerName} para ${refereeName} atualizada para o status ${status}`);
+
     res.json(referral);
   } catch (error) {
     console.error(error);
@@ -426,7 +463,10 @@ app.put('/api/referrals/:id', async (req, res) => {
 app.delete('/api/referrals/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const referral = await prisma.referral.findUnique({ where: { id } });
+    const referral = await prisma.referral.findUnique({
+      where: { id },
+      include: { referrer: true, referee: true }
+    });
     if (!referral) {
       return res.status(404).json({ error: 'Indicação não encontrada.' });
     }
@@ -437,6 +477,10 @@ app.delete('/api/referrals/:id', async (req, res) => {
 
     // Recalcular recompensas acumuladas
     await recalculateRealReferrerRewards(referral.referrerId);
+
+    const referrerName = referral.referrer ? referral.referrer.name : 'Desconhecido';
+    const refereeName = referral.referee ? referral.referee.name : 'Desconhecido';
+    await addAuditLog(req, 'REFERRAL_DELETE', `Indicação de ${referrerName} para ${refereeName} excluída`);
 
     res.json({ message: 'Indicação removida com sucesso.' });
   } catch (error) {
@@ -491,8 +535,20 @@ app.put('/api/rewards/:id', async (req, res) => {
       data: {
         status,
         deliveredAt: status === 'ENTREGUE' ? new Date() : null
+      },
+      include: {
+        referral: {
+          include: { referrer: true, referee: true }
+        }
       }
     });
+
+    const referrerName = reward.referral.referrer ? reward.referral.referrer.name : 'Desconhecido';
+    const refereeName = reward.referral.referee ? reward.referral.referee.name : 'Desconhecido';
+    const desc = status === 'ENTREGUE'
+      ? `Recompensa de R$ ${reward.value.toFixed(2)} (${reward.type}) entregue a ${referrerName} (referente a indicação de ${refereeName})`
+      : `Recompensa de R$ ${reward.value.toFixed(2)} (${reward.type}) alterada para o status ${status}`;
+    await addAuditLog(req, 'REWARD_UPDATE', desc);
 
     res.json(reward);
   } catch (error) {
@@ -613,8 +669,10 @@ app.post('/api/auth/login', async (req, res) => {
       }
     });
     if (!user) {
+      await addAuditLog(null, 'LOGIN_FAILED', `Tentativa de login malsucedida para o e-mail: ${email}`);
       return res.status(401).json({ message: 'Usuário ou senha incorretos.' });
     }
+    await addAuditLog({ headers: { 'x-operator-name': user.name } }, 'LOGIN_SUCCESS', `Operador ${user.name} realizou login`);
     res.json({
       id: user.id,
       name: user.name,
@@ -660,6 +718,7 @@ app.post('/api/users', async (req, res) => {
         role
       }
     });
+    await addAuditLog(req, 'USER_CREATE', `Operador ${name} (${email}) cadastrado com o cargo ${role}`);
     res.json({
       id: user.id,
       name: user.name,
@@ -674,7 +733,12 @@ app.post('/api/users', async (req, res) => {
 app.delete('/api/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ error: 'Operador não encontrado.' });
+    }
     await prisma.user.delete({ where: { id } });
+    await addAuditLog(req, 'USER_DELETE', `Operador ${user.name} (${user.email}) excluído`);
     res.json({ message: 'Operador removido com sucesso.' });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao deletar operador no backend.' });
@@ -718,6 +782,8 @@ app.put('/api/users/:id', async (req, res) => {
       data: updateData
     });
 
+    await addAuditLog(req, 'USER_UPDATE', `Operador ${user.name} (${user.email}) atualizado`);
+
     res.json({
       id: user.id,
       name: user.name,
@@ -727,6 +793,32 @@ app.put('/api/users/:id', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Erro ao atualizar operador no backend.' });
+  }
+});
+
+
+// ==================== ROTAS DE AUDITORIA ====================
+
+app.get('/api/audit', async (req, res) => {
+  try {
+    const logs = await prisma.auditLog.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(logs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao buscar logs de auditoria.' });
+  }
+});
+
+app.delete('/api/audit', async (req, res) => {
+  try {
+    await prisma.auditLog.deleteMany({});
+    await addAuditLog(req, 'AUDIT_CLEAR', 'Histórico de auditoria limpo pelo operador');
+    res.json({ message: 'Histórico de auditoria limpo com sucesso.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao limpar logs de auditoria.' });
   }
 });
 
