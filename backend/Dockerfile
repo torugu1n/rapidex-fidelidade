@@ -4,6 +4,9 @@ FROM node:18-alpine
 # Diretório de trabalho
 WORKDIR /usr/src/app
 
+# Instalar dependências do sistema necessárias para o Prisma no Alpine
+RUN apk add --no-cache openssl libc6-compat
+
 # Copiar arquivos de dependências
 COPY package*.json ./
 COPY prisma ./prisma/
