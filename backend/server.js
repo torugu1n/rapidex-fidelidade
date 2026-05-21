@@ -42,69 +42,73 @@ app.put('/api/settings', (req, res) => {
   res.json({ ...defaultSettings, mockDelayEnabled: false, latencyMs: 0 });
 });
 
+// Função para popular/semear o Banco de Dados com todos os dados padrão (Mock)
+async function seedDatabase() {
+  // Limpar tabelas existentes
+  await prisma.reward.deleteMany({});
+  await prisma.referral.deleteMany({});
+  await prisma.customer.deleteMany({});
+  await prisma.plan.deleteMany({});
+  await prisma.user.deleteMany({});
+  
+  // Semente do Administrador Padrão e Atendente Padrão
+  await prisma.user.create({
+    data: {
+      email: 'admin.rapidex',
+      passwordHash: 'Rapidex@2026#',
+      name: 'Administrador Rapidex',
+      role: 'ADMIN'
+    }
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'rogerio.castro',
+      passwordHash: 'Hbusa@2009',
+      name: 'Rogério Castro',
+      role: 'ATENDENTE'
+    }
+  });
+
+  // Semente dos Planos
+  const p1 = await prisma.plan.create({ data: { id: 'p1', name: '100 Mega Fibra', price: 79.90 } });
+  const p2 = await prisma.plan.create({ data: { id: 'p2', name: '300 Mega Fibra', price: 99.90 } });
+  const p3 = await prisma.plan.create({ data: { id: 'p3', name: '500 Mega Fibra', price: 119.90 } });
+  const p4 = await prisma.plan.create({ data: { id: 'p4', name: '1 Giga Ultra Fibra', price: 149.90 } });
+
+  // Semente dos Clientes
+  const c1 = await prisma.customer.create({ data: { id: 'c1', name: 'Carlos Alberto Silva', phone: '(86) 99843-2198', cpf: '123.456.789-00', planId: p3.id, city: 'Teresina', neighborhood: 'Jóquei' } });
+  const c2 = await prisma.customer.create({ data: { id: 'c2', name: 'Ana Beatriz Souza', phone: '(86) 98122-4532', cpf: '987.654.321-11', planId: p2.id, city: 'Teresina', neighborhood: 'Fátima' } });
+  const c3 = await prisma.customer.create({ data: { id: 'c3', name: 'Marcos Vinícius Oliveira', phone: '(86) 99244-8877', cpf: '456.789.123-22', planId: p4.id, city: 'Teresina', neighborhood: 'Centro' } });
+  const c4 = await prisma.customer.create({ data: { id: 'c4', name: 'Mariana Costa Ramos', phone: '(86) 98877-6655', cpf: '321.654.987-33', planId: p2.id, city: 'Teresina', neighborhood: 'Horto' } });
+  const c5 = await prisma.customer.create({ data: { id: 'c5', name: 'Felipe Santos Oliveira', phone: '(86) 99311-2233', cpf: '159.753.486-44', planId: p1.id, status: 'INATIVO', city: 'Teresina', neighborhood: 'Dirceu' } });
+  const c6 = await prisma.customer.create({ data: { id: 'c6', name: 'Juliana Mendes Lima', phone: '(86) 98144-5566', cpf: '852.963.741-55', planId: p3.id, city: 'Teresina', neighborhood: 'Ininga' } });
+  const c7 = await prisma.customer.create({ data: { id: 'c7', name: 'Roberto Rocha Santos', phone: '(86) 99988-1122', cpf: '369.258.147-66', planId: p2.id, city: 'Teresina', neighborhood: 'Morada do Sol' } });
+  const c8 = await prisma.customer.create({ data: { id: 'c8', name: 'Patrícia Alves Carvalho', phone: '(86) 98844-3322', cpf: '741.852.963-77', planId: p3.id, city: 'Teresina', neighborhood: 'Ilhotas' } });
+  const c9 = await prisma.customer.create({ data: { id: 'c9', name: 'Lucas Ferreira Lima', phone: '(86) 97122-3344', cpf: '123.789.456-88', planId: p4.id, city: 'Teresina', neighborhood: 'Mocambinho' } });
+  const c10 = await prisma.customer.create({ data: { id: 'c10', name: 'Amanda Melo Pereira', phone: '(86) 99345-6789', cpf: '951.357.852-99', planId: p1.id, city: 'Teresina', neighborhood: 'Vermelha' } });
+
+  // Semente das Indicações
+  const r1 = await prisma.referral.create({ data: { id: 'r1', referrerId: c1.id, refereeId: c4.id, status: 'INSTALADO' } });
+  const r2 = await prisma.referral.create({ data: { id: 'r2', referrerId: c1.id, refereeId: c5.id, status: 'CANCELADO' } });
+  const r3 = await prisma.referral.create({ data: { id: 'r3', referrerId: c1.id, refereeId: c8.id, status: 'INSTALADO' } });
+  const r4 = await prisma.referral.create({ data: { id: 'r4', referrerId: c2.id, refereeId: c6.id, status: 'INSTALADO' } });
+  const r5 = await prisma.referral.create({ data: { id: 'r5', referrerId: c2.id, refereeId: c7.id, status: 'INSTALADO' } });
+  const r6 = await prisma.referral.create({ data: { id: 'r6', referrerId: c8.id, refereeId: c9.id, status: 'INSTALADO' } });
+  const r7 = await prisma.referral.create({ data: { id: 'r7', referrerId: c3.id, refereeId: c10.id, status: 'PENDENTE' } });
+
+  // Semente de Recompensas
+  await prisma.reward.create({ data: { referralId: r1.id, type: 'Desconto de R$ 50,00 na Fatura', value: 50.00, status: 'ENTREGUE', deliveredAt: new Date() } });
+  await prisma.reward.create({ data: { referralId: r3.id, type: 'Desconto de R$ 50,00 na Fatura', value: 50.00, status: 'PENDENTE' } });
+  await prisma.reward.create({ data: { referralId: r4.id, type: 'Pix de R$ 50,00', value: 50.00, status: 'ENTREGUE', deliveredAt: new Date() } });
+  await prisma.reward.create({ data: { referralId: r5.id, type: 'Pix de R$ 50,00', value: 50.00, status: 'ENTREGUE', deliveredAt: new Date() } });
+  await prisma.reward.create({ data: { referralId: r6.id, type: 'Desconto de R$ 50,00 na Fatura', value: 50.00, status: 'PENDENTE' } });
+}
+
 // Rota de semeadura (Seed) do Banco de Dados
 app.post('/api/reset', async (req, res) => {
   try {
-    // Limpar tabelas existentes
-    await prisma.reward.deleteMany({});
-    await prisma.referral.deleteMany({});
-    await prisma.customer.deleteMany({});
-    await prisma.plan.deleteMany({});
-    await prisma.user.deleteMany({});
-    
-    // Semente do Administrador Padrão e Atendente Padrão
-    await prisma.user.create({
-      data: {
-        email: 'admin.rapidex',
-        passwordHash: 'Rapidex@2026#',
-        name: 'Administrador Rapidex',
-        role: 'ADMIN'
-      }
-    });
-
-    await prisma.user.create({
-      data: {
-        email: 'rogerio.castro',
-        passwordHash: 'Hbusa@2009',
-        name: 'Rogério Castro',
-        role: 'ATENDENTE'
-      }
-    });
-
-    // Semente dos Planos
-    const p1 = await prisma.plan.create({ data: { id: 'p1', name: '100 Mega Fibra', price: 79.90 } });
-    const p2 = await prisma.plan.create({ data: { id: 'p2', name: '300 Mega Fibra', price: 99.90 } });
-    const p3 = await prisma.plan.create({ data: { id: 'p3', name: '500 Mega Fibra', price: 119.90 } });
-    const p4 = await prisma.plan.create({ data: { id: 'p4', name: '1 Giga Ultra Fibra', price: 149.90 } });
-
-    // Semente dos Clientes
-    const c1 = await prisma.customer.create({ data: { id: 'c1', name: 'Carlos Alberto Silva', phone: '(86) 99843-2198', cpf: '123.456.789-00', planId: p3.id, city: 'Teresina', neighborhood: 'Jóquei' } });
-    const c2 = await prisma.customer.create({ data: { id: 'c2', name: 'Ana Beatriz Souza', phone: '(86) 98122-4532', cpf: '987.654.321-11', planId: p2.id, city: 'Teresina', neighborhood: 'Fátima' } });
-    const c3 = await prisma.customer.create({ data: { id: 'c3', name: 'Marcos Vinícius Oliveira', phone: '(86) 99244-8877', cpf: '456.789.123-22', planId: p4.id, city: 'Teresina', neighborhood: 'Centro' } });
-    const c4 = await prisma.customer.create({ data: { id: 'c4', name: 'Mariana Costa Ramos', phone: '(86) 98877-6655', cpf: '321.654.987-33', planId: p2.id, city: 'Teresina', neighborhood: 'Horto' } });
-    const c5 = await prisma.customer.create({ data: { id: 'c5', name: 'Felipe Santos Oliveira', phone: '(86) 99311-2233', cpf: '159.753.486-44', planId: p1.id, status: 'INATIVO', city: 'Teresina', neighborhood: 'Dirceu' } });
-    const c6 = await prisma.customer.create({ data: { id: 'c6', name: 'Juliana Mendes Lima', phone: '(86) 98144-5566', cpf: '852.963.741-55', planId: p3.id, city: 'Teresina', neighborhood: 'Ininga' } });
-    const c7 = await prisma.customer.create({ data: { id: 'c7', name: 'Roberto Rocha Santos', phone: '(86) 99988-1122', cpf: '369.258.147-66', planId: p2.id, city: 'Teresina', neighborhood: 'Morada do Sol' } });
-    const c8 = await prisma.customer.create({ data: { id: 'c8', name: 'Patrícia Alves Carvalho', phone: '(86) 98844-3322', cpf: '741.852.963-77', planId: p3.id, city: 'Teresina', neighborhood: 'Ilhotas' } });
-    const c9 = await prisma.customer.create({ data: { id: 'c9', name: 'Lucas Ferreira Lima', phone: '(86) 97122-3344', cpf: '123.789.456-88', planId: p4.id, city: 'Teresina', neighborhood: 'Mocambinho' } });
-    const c10 = await prisma.customer.create({ data: { id: 'c10', name: 'Amanda Melo Pereira', phone: '(86) 99345-6789', cpf: '951.357.852-99', planId: p1.id, city: 'Teresina', neighborhood: 'Vermelha' } });
-
-    // Semente das Indicações
-    const r1 = await prisma.referral.create({ data: { id: 'r1', referrerId: c1.id, refereeId: c4.id, status: 'INSTALADO' } });
-    const r2 = await prisma.referral.create({ data: { id: 'r2', referrerId: c1.id, refereeId: c5.id, status: 'CANCELADO' } });
-    const r3 = await prisma.referral.create({ data: { id: 'r3', referrerId: c1.id, refereeId: c8.id, status: 'INSTALADO' } });
-    const r4 = await prisma.referral.create({ data: { id: 'r4', referrerId: c2.id, refereeId: c6.id, status: 'INSTALADO' } });
-    const r5 = await prisma.referral.create({ data: { id: 'r5', referrerId: c2.id, refereeId: c7.id, status: 'INSTALADO' } });
-    const r6 = await prisma.referral.create({ data: { id: 'r6', referrerId: c8.id, refereeId: c9.id, status: 'INSTALADO' } });
-    const r7 = await prisma.referral.create({ data: { id: 'r7', referrerId: c3.id, refereeId: c10.id, status: 'PENDENTE' } });
-
-    // Semente de Recompensas
-    await prisma.reward.create({ data: { referralId: r1.id, type: 'Desconto de R$ 50,00 na Fatura', value: 50.00, status: 'ENTREGUE', deliveredAt: new Date() } });
-    await prisma.reward.create({ data: { referralId: r3.id, type: 'Desconto de R$ 50,00 na Fatura', value: 50.00, status: 'PENDENTE' } });
-    await prisma.reward.create({ data: { referralId: r4.id, type: 'Pix de R$ 50,00', value: 50.00, status: 'ENTREGUE', deliveredAt: new Date() } });
-    await prisma.reward.create({ data: { referralId: r5.id, type: 'Pix de R$ 50,00', value: 50.00, status: 'ENTREGUE', deliveredAt: new Date() } });
-    await prisma.reward.create({ data: { referralId: r6.id, type: 'Desconto de R$ 50,00 na Fatura', value: 50.00, status: 'PENDENTE' } });
-
+    await seedDatabase();
     res.json({ message: 'Banco de dados redefinido e povoado com sucesso.' });
   } catch (error) {
     console.error(error);
@@ -692,30 +696,7 @@ async function autoSeed() {
     const userCount = await prisma.user.count();
     if (userCount === 0) {
       console.log('Banco de dados limpo detectado. Executando seed automático de usuários e dados iniciais...');
-      await prisma.user.create({
-        data: {
-          email: 'admin.rapidex',
-          passwordHash: 'Rapidex@2026#',
-          name: 'Administrador Rapidex',
-          role: 'ADMIN'
-        }
-      });
-      await prisma.user.create({
-        data: {
-          email: 'rogerio.castro',
-          passwordHash: 'Hbusa@2009',
-          name: 'Rogério Castro',
-          role: 'ATENDENTE'
-        }
-      });
-
-      const planCount = await prisma.plan.count();
-      if (planCount === 0) {
-        await prisma.plan.create({ data: { id: 'p1', name: '100 Mega Fibra', price: 79.90 } });
-        await prisma.plan.create({ data: { id: 'p2', name: '300 Mega Fibra', price: 99.90 } });
-        await prisma.plan.create({ data: { id: 'p3', name: '500 Mega Fibra', price: 119.90 } });
-        await prisma.plan.create({ data: { id: 'p4', name: '1 Giga Ultra Fibra', price: 149.90 } });
-      }
+      await seedDatabase();
       console.log('Seed automático concluído com sucesso.');
     }
   } catch (error) {
