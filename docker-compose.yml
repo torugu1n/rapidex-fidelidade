@@ -1,0 +1,59 @@
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: fidelidade_db
+    restart: always
+    environment:
+      POSTGRES_USER: fidelidade_user
+      POSTGRES_PASSWORD: fidelidade_password_secure_123
+      POSTGRES_DB: fidelidade_isp_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fidelidade_user -d fidelidade_isp_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: ghcr.io/torugu1n/fidelidade-backend:latest
+    container_name: fidelidade_backend
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: "postgresql://fidelidade_user:fidelidade_password_secure_123@db:5432/fidelidade_isp_db?schema=public"
+      PORT: 3001
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "npx prisma db push && npm start"
+
+  frontend:
+    image: ghcr.io/torugu1n/fidelidade-frontend:latest
+    container_name: fidelidade_frontend
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Opcional: Montar credenciais do docker se o repositório for privado
+      # - ~/.docker/config.json:/config.json:ro
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300 # 5 minutos
+    # Monitora o backend e o frontend para atualizações automáticas
+    command: fidelidade_backend fidelidade_frontend
+
+volumes:
+  postgres_data:

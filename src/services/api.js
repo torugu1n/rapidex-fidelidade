@@ -3,8 +3,8 @@
 
 import { mockDb } from './mockDb';
 
-const USE_REAL_BACKEND = false; // Altere para true para conectar ao backend real no futuro
-const BACKEND_URL = 'http://localhost:3001/api';
+const USE_REAL_BACKEND = true; // Habilitado para o deploy com backend real
+const BACKEND_URL = window.location.origin.includes('localhost:5173') ? 'http://localhost:3001/api' : '/api';
 
 export const api = {
   async getSettings() {

@@ -3,8 +3,8 @@ import { Wifi, Lock, Mail, ArrowRight } from 'lucide-react';
 import { api } from '../services/api';
 
 export default function Login({ onLogin, showToast }) {
-  const [email, setEmail] = useState('admin.rapidex');
-  const [password, setPassword] = useState('Rapidex@2026#');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
