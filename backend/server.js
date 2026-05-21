@@ -686,7 +686,45 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
+// Função para sementes (seed) automáticas de usuários e planos caso o banco esteja vazio
+async function autoSeed() {
+  try {
+    const userCount = await prisma.user.count();
+    if (userCount === 0) {
+      console.log('Banco de dados limpo detectado. Executando seed automático de usuários e dados iniciais...');
+      await prisma.user.create({
+        data: {
+          email: 'admin.rapidex',
+          passwordHash: 'Rapidex@2026#',
+          name: 'Administrador Rapidex',
+          role: 'ADMIN'
+        }
+      });
+      await prisma.user.create({
+        data: {
+          email: 'rogerio.castro',
+          passwordHash: 'Hbusa@2009',
+          name: 'Rogério Castro',
+          role: 'ATENDENTE'
+        }
+      });
+
+      const planCount = await prisma.plan.count();
+      if (planCount === 0) {
+        await prisma.plan.create({ data: { id: 'p1', name: '100 Mega Fibra', price: 79.90 } });
+        await prisma.plan.create({ data: { id: 'p2', name: '300 Mega Fibra', price: 99.90 } });
+        await prisma.plan.create({ data: { id: 'p3', name: '500 Mega Fibra', price: 119.90 } });
+        await prisma.plan.create({ data: { id: 'p4', name: '1 Giga Ultra Fibra', price: 149.90 } });
+      }
+      console.log('Seed automático concluído com sucesso.');
+    }
+  } catch (error) {
+    console.error('Erro ao executar seed automático:', error);
+  }
+}
+
 // Inicialização do servidor
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Servidor rodando com sucesso na porta ${PORT}`);
+  await autoSeed();
 });
