@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: fidelidade_db
+    restart: always
+    environment:
+      POSTGRES_USER: fidelidade_user
+      POSTGRES_PASSWORD: fidelidade_password_secure_123
+      POSTGRES_DB: fidelidade_isp_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    container_name: fidelidade_api
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: "postgresql://fidelidade_user:fidelidade_password_secure_123@postgres:5432/fidelidade_isp_db?schema=public"
+      PORT: 3001
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:

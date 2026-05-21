@@ -1,0 +1,32 @@
+{
+  "name": "isp-fidelidade-backend",
+  "version": "1.0.0",
+  "description": "Backend API para o controle de indicações e recompensas do provedor de internet (ISP)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
+  },
+  "keywords": [
+    "isp",
+    "fidelidade",
+    "indicações",
+    "recompensas",
+    "express",
+    "prisma"
+  ],
+  "author": "Equipe de Engenharia ISP",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.12.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0",
+    "prisma": "^5.12.1"
+  }
+}

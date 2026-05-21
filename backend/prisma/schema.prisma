@@ -1,0 +1,102 @@
+// Schema do Prisma ORM para PostgreSQL
+// Mapeia o banco relacional de indicações e recompensas do provedor.
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum ClientStatus {
+  ATIVO
+  INATIVO
+  SUSPENSO
+}
+
+enum ReferralStatus {
+  PENDENTE
+  INSTALADO
+  CANCELADO
+}
+
+enum RewardStatus {
+  PENDENTE
+  ENTREGUE
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("ADMIN")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Customer {
+  id           String       @id @default(uuid())
+  name         String
+  phone        String       // WhatsApp/Celular do cliente
+  cpf          String?      @unique
+  status       ClientStatus @default(ATIVO)
+  planId       String
+  plan         Plan         @relation(fields: [planId], references: [id])
+  city         String       // Cidade do cliente
+  neighborhood String       // Bairro do cliente
+  notes        String?      // Notas administrativas internas
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relacionamentos de indicações
+  referralsMade     Referral[] @relation("ReferrerRelation") // Indicações enviadas
+  referralsReceived Referral[] @relation("RefereeRelation")  // Indicação recebida (quem indicou este cliente)
+
+  @@map("customers")
+}
+
+model Plan {
+  id        String     @id @default(uuid())
+  name      String     // Ex: "300 Mega Fibra"
+  price     Float
+  customers Customer[]
+  createdAt DateTime   @default(now())
+
+  @@map("plans")
+}
+
+model Referral {
+  id          String         @id @default(uuid())
+  referrerId  String         // Cliente que indicou
+  referrer    Customer       @relation("ReferrerRelation", fields: [referrerId], references: [id], onDelete: Cascade)
+  refereeId   String         // Novo cliente que foi indicado
+  referee     Customer       @relation("RefereeRelation", fields: [refereeId], references: [id], onDelete: Cascade)
+  status      ReferralStatus @default(PENDENTE)
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  // Recompensa gerada por esta indicação (1-para-1 se status for INSTALADO)
+  reward      Reward?
+
+  @@map("referrals")
+}
+
+model Reward {
+  id          String       @id @default(uuid())
+  referralId  String       @unique
+  referral    Referral     @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  type        String       // Ex: "Desconto na Fatura", "Pix de R$ 50,00"
+  value       Float
+  status      RewardStatus @default(PENDENTE)
+  deliveredAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("rewards")
+}
