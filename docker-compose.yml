@@ -41,19 +41,5 @@ services:
     depends_on:
       - backend
 
-  watchtower:
-    image: containrrr/watchtower
-    container_name: watchtower
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      # Opcional: Montar credenciais do docker se o repositório for privado
-      # - ~/.docker/config.json:/config.json:ro
-    environment:
-      - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_POLL_INTERVAL=300 # 5 minutos
-    # Monitora o backend e o frontend para atualizações automáticas
-    command: fidelidade_backend fidelidade_frontend
-
 volumes:
   postgres_data:
