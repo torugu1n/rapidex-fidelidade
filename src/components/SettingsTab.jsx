@@ -107,7 +107,8 @@ export default function SettingsTab({ showToast, showConfirm, onSettingsUpdate, 
       showToast('Digite o nome do tipo de recompensa.', 'warning');
       return;
     }
-    if (settings.rewardTypes.includes(trimmed)) {
+    const currentTypes = settings.rewardTypes || [];
+    if (currentTypes.includes(trimmed)) {
       showToast('Este tipo de recompensa já está cadastrado.', 'warning');
       return;
     }
@@ -120,7 +121,7 @@ export default function SettingsTab({ showToast, showConfirm, onSettingsUpdate, 
       type: 'success',
       onConfirm: async () => {
         try {
-          const updatedTypes = [...settings.rewardTypes, trimmed];
+          const updatedTypes = [...currentTypes, trimmed];
           const updated = await api.updateSettings({
             rewardTypes: updatedTypes,
             operatorName: currentUser?.name
@@ -148,7 +149,8 @@ export default function SettingsTab({ showToast, showConfirm, onSettingsUpdate, 
       type: 'danger',
       onConfirm: async () => {
         try {
-          const updatedTypes = settings.rewardTypes.filter(t => t !== typeToDelete);
+          const currentTypes = settings.rewardTypes || [];
+          const updatedTypes = currentTypes.filter(t => t !== typeToDelete);
           const updated = await api.updateSettings({
             rewardTypes: updatedTypes,
             operatorName: currentUser?.name

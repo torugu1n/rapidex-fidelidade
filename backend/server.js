@@ -37,7 +37,13 @@ let defaultSettings = {
   defaultRewardValue: 50.00,
   adminName: 'Administrador Rapidex',
   adminEmail: 'admin@rapidex.com.br',
-  referralsPerReward: 3
+  referralsPerReward: 3,
+  rewardTypes: [
+    'Pix',
+    'Mês Grátis',
+    'Crédito na Conta',
+    'Desconto de R$ 50,00 na Fatura'
+  ]
 };
 
 // ==================== ROTAS DE CONFIGURAÇÃO & RESET ====================
@@ -53,7 +59,8 @@ app.put('/api/settings', async (req, res) => {
     adminEmail: req.body.adminEmail || defaultSettings.adminEmail,
     defaultRewardType: req.body.defaultRewardType || defaultSettings.defaultRewardType,
     defaultRewardValue: parseFloat(req.body.defaultRewardValue) || defaultSettings.defaultRewardValue,
-    referralsPerReward: parseInt(req.body.referralsPerReward) || defaultSettings.referralsPerReward
+    referralsPerReward: parseInt(req.body.referralsPerReward) || defaultSettings.referralsPerReward,
+    rewardTypes: req.body.rewardTypes || defaultSettings.rewardTypes
   };
   await addAuditLog(req, 'SETTINGS_UPDATE', 'Configurações gerais atualizadas');
   res.json({ ...defaultSettings, mockDelayEnabled: false, latencyMs: 0 });
